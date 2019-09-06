@@ -2,17 +2,29 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Inlin
 from telegram import InlineQueryResultArticle, InputTextMessageContent, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import logging
 import requests
+import json
+import html
 
-from studiehandboken_parser import main_parser
+import spreadsheet_service
+from studiehandboken_service import main_parser
+import client_secrets_telegram
 
-API_TOKEN = "968319027:AAEDy-A2R6ZMWxyF5OtQWbgmt6FbQqQMfes"
+API_TOKEN = client_secrets_telegram.BOT_TOKEN
 URL = "https://api.telegram.org/bot{}/".format(API_TOKEN)
+
 
 # setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
+service = spreadsheet_service.SpreadsheetService()
 
-PROGRAM, LANGUAGE, TIMETABLE = range(3)
+
+PROGRAM, LANGUAGE, TIMETABLE, SAVEDATA = range(4)
+
+
+def remove_keyboard(update, context):
+    reply_markup = ReplyKeyboardRemove()
+    update.message.editMessageText(chat_id=update.message.chat_id, reply_markup=reply_markup)
 
 
 def start(update, context):
@@ -43,32 +55,51 @@ def language(update, context):
     context.user_data['language'] = update.message.text
     user = update.message.from_user
     logger.info("User %s did specify %s as his language.", user.first_name, update.message.text)
-    update.message.reply_text('Thank you, setting {} as your language.'.format(update.message.text))
-    # Give timetable
-    update.message.reply_text('Give me a minute, I\'m looking for your timetable. '
-                              'Let me entertain you with a joke as you wait...\n\n'
-                              '{}'.format(get_joke()))
+    reply_keyboard = [['Yes', 'No']]
+    update.message.reply_text('Thank you, setting {} as your language. \n'
+                              'Can I save your data for later use?'.format(update.message.text),
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
-    timetable(update, context)
-    return ConversationHandler.END
+    return SAVEDATA
 
 
 def skip_language(update, context):
     user = update.message.from_user
     logger.info("User %s did not specify a language.", user.first_name)
-    update.message.reply_text('I bet you know many languages!\n Setting default language to Swedish.')
+    context.user_data['language'] = "Swedish"
+    reply_keyboard = [['Yes', 'No']]
+    update.message.reply_text('I bet you know many languages!\n Setting default language to Swedish.',
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
-    timetable(update, context)
-    return ConversationHandler.END
+    return SAVEDATA
+
+
+def save_data(update, context):
+    user = update.message.from_user
+    logger.info("User %s did not specify a language.", user.first_name)
+    update.message.reply_text('Thank you, I will save your information for later use.\n '
+                              'Dont worry, it\'s safe with me.')
+    service.insertRow(data=[user.id, context.user_data["programme"], context.user_data["language"]])
+    return TIMETABLE
+
+
+def skip_save(update, context):
+    update.message.reply_text('Ok, I understand you.', reply_markup=ReplyKeyboardRemove())
+    return TIMETABLE
 
 
 def timetable(update, context):
     user = update.message.from_user
     logger.info("Looking for timetable for %s.", user.first_name)
 
+    # Give timetable
+    update.message.reply_text('Give me a minute, I\'m looking for your timetable. '
+                              'Let me entertain you with a joke as you wait...\n\n'
+                              '{}'.format(get_joke()), reply_markup=ReplyKeyboardRemove())
+
     table = main_parser(program=context.user_data["programme"], lang=context.user_data["language"])
     print(table)
-    update.message.reply_text(table)
+    update.message.reply_text(table, reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -93,25 +124,29 @@ def get_msc(update, context):
                               'Here\'s a joke for now.\n'
                               '{}'.format(get_joke()))
     table = main_parser(program="M.Sc.", lang='Swedish')
-    update.message.reply_text('This weeks schedule, \n{}'.format(table))
+    update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
 
 
 def get_bsc(update, context):
     user = update.message.from_user
     logger.info("User %s looking for his bachelors courses.", user.first_name)
+    update.message.reply_text('Looking for bachelors schedule.. \n\n'
+                              'Here\'s a joke for now.\n'
+                              '{}'.format(get_joke()))
     table = main_parser(program="B.Sc.", lang='Swedish')
-    update.message.reply_text('This weeks schedule, \n{}'.format(table))
+    update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
 
 
 def tell_joke(update, context):
-    update.message.reply_text(get_joke())
+    update.message.reply_text(get_joke(), reply_markup=ReplyKeyboardRemove())
 
 
 def get_joke():
     # Get joke, check for bad request
     r = requests.get("https://geek-jokes.sameerkumar.website/api")
-    joke = r.json() if r.status_code == 200 else "No joke for today."
-    return joke
+    joke = json.dumps(r.json()) if r.status_code == 200 else "No joke for today."
+
+    return html.unescape(joke[1:-1])
 
 
 def get_help(update, context):
@@ -124,7 +159,8 @@ def get_help(update, context):
 
 def get_dev(update, context):
     update.message.reply_text('You will find the project at\n'
-                              '')
+                              'https://github.com/Faagerholm/Professo-Bot.git')
+
 
 def main():
     updater = Updater(token=API_TOKEN, use_context=True)
@@ -144,6 +180,8 @@ def main():
 
             TIMETABLE: [MessageHandler(None, timetable)],
 
+            SAVEDATA: [MessageHandler(Filters.regex('^(Yes|No)$'), save_data),
+                       CommandHandler('skip', skip_save)]
         },
 
         fallbacks=[CommandHandler('cancel', cancel)]
@@ -154,7 +192,8 @@ def main():
     dispatcher.add_handler(CommandHandler('Kandi', get_bsc))
     dispatcher.add_handler(CommandHandler('Joke', tell_joke))
     dispatcher.add_handler(CommandHandler('Help', get_help))
-    dispatcher.add_handler(CommandHandler('Developer'), get_dev)
+    dispatcher.add_handler(CommandHandler('Developer', get_dev))
+
     # log all errors
     dispatcher.add_error_handler(error)
 

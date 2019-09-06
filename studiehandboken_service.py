@@ -1,8 +1,7 @@
 import requests
-import json
 import datetime
 import pprint
-import calendar
+import locale
 
 baseUrl = "http://stserv.abo.fi/api/accomplishment-plan/"
 courseUrl = "http://stserv.abo.fi/api/realizations/course/"
@@ -70,10 +69,15 @@ def get_thisweek_sunday(plus_weeks=1):
 
 
 def main_parser(program="M.Sc.", lang=default_lang):
-
-    if lang is "English": lang = "valueEn"
-    elif lang is "Finnish": lang = "valueFi"
-    else: lang = "valueSv"
+    if lang is "English":
+        lang = "valueEn"
+        lang_code = "en"
+    elif lang is "Finnish":
+        lang = "valueFi"
+        lang_code = "fi_FI"
+    else:
+        lang = "valueSv"
+        lang_code = "sv_SE"
 
     output = False
     website_parser(str(keys[program]), lang, output=output)
@@ -83,9 +87,11 @@ def main_parser(program="M.Sc.", lang=default_lang):
         course_parser(v, lang)
 
     weeks_from_now = 0
-    if output: ("Looking for next {} weeks courses... Hold on!".format(weeks_from_now + 1))
+    if output: ("Looking for next {} weeks courses.. Hold on!".format(weeks_from_now + 1))
     sunday = get_thisweek_sunday(weeks_from_now)
     text = ""
+    # ocale.setlocale(locale.LC_TIME, 'sv_SE')
+
     for name, timetable in courses_timetable.items():
         if timetable:
             first = True
@@ -101,11 +107,11 @@ def main_parser(program="M.Sc.", lang=default_lang):
                         break
                     else:
                         if first:
-                            text = text + name[:20] + "... "
+                            text = text + name + "\n"
                         # chatbot
-                        text = text + time["startTime"].strftime("%A %d.%m") + " " + time["startTime"].strftime(
+                        text = text + " "*15 + time["startTime"].strftime("%A %d.%m") + " " + time["startTime"].strftime(
                             "%H:%M") + "-" + time["endTime"].strftime("%H:%M") + "\n"
-                        break
+                        # break
     return text
 
 
