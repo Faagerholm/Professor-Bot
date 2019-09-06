@@ -11,10 +11,20 @@ courses = {}
 courses_timetable = {}
 default_lang = "value" + languageCode[0]
 
+degreeInMemory = "None"
+
 
 # Default swedish
 def website_parser(website_code, lang=default_lang, output=True):
     # TODO: make test for websited code
+    # Clear old table
+    global degreeInMemory
+    if degreeInMemory == website_code:
+        return
+    degInMemory = website_code
+
+    courses_timetable.clear()
+
     r = requests.get(url=baseUrl + website_code)
     response = r.json()
     title = response[0]["name"][lang]
@@ -79,8 +89,10 @@ def main_parser(program="M.Sc.", lang=default_lang, weeks=0):
         lang_code = "sv_SE"
 
     output = False
+
     website_parser(str(keys[program]), lang, output=output)
     get_thisweek_sunday()
+
     if output: print("Searching for courses...")
     for k, v in courses.items():
         course_parser(v, lang)

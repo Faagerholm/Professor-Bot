@@ -30,14 +30,17 @@ def remove_keyboard(update, context):
 
 
 def start(update, context):
-    reply_keyboard = [['B.Sc.', 'M.Sc.', 'Other']]
-    update.message.reply_text(
-        'Hi! My name is Professor Bot. I will try to understand you plebiands. '
-        'Send /cancel to stop talking to me.\nI may collect unnecessary information about you and your family. \n\n'
-        'At what stage are you studying?',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    reply_keyboard = [['B.Sc.', 'M.Sc.']]
+    #
+    # update.message.reply_text(
+    #    'Hi! My name is Professor Bot. Let me try to understand you abit more. '
+    #    'Send /cancel to stop talking to me.\nI may collect unnecessary information about you and your family. \n\n'
+    #    'At what stage are you studying?',
+    #    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    #
 
-    return PROGRAM
+    update.message.reply_text('I\'m not fully implemented yet, stay tuned. meanwhile, check out /help')
+    return ConversationHandler.END
 
 
 def program(update, context):
@@ -187,7 +190,7 @@ def error(update, context):
 def get_msc(update, context):
     user = update.message.from_user
     logger.info("User %s looking for his masters courses.", user.first_name)
-    update.message.reply_text('Looking for masters schedule.. \n\n'
+    update.message.reply_text('Looking for this weeks masters schedule.. \n\n'
                               'Here\'s a joke for now.\n'
                               '{}'.format(get_joke()))
     table = main_parser(program="M.Sc.", lang='Swedish')
@@ -201,8 +204,8 @@ def get_msc(update, context):
 
 def get_bsc(update, context):
     user = update.message.from_user
-    logger.info("User %s looking for his bachelors courses.", user.first_name)
-    update.message.reply_text('Looking for bachelors schedule.. \n\n'
+    logger.info("User %s looking for his bachelor\'s courses.", user.first_name)
+    update.message.reply_text('Looking for this weeks bachelor\'s schedule.. \n\n'
                               'Here\'s a joke for now.\n'
                               '{}'.format(get_joke()))
     table = main_parser(program="B.Sc.", lang='Swedish')
