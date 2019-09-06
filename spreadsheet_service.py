@@ -20,7 +20,7 @@ class SpreadsheetService:
         sheet = self.client.open("Studiehandboken_data").sheet1
         # Extract and print all of the values
         list_of_hashes = sheet.get_all_records()
-        print(list_of_hashes)
+        # print(list_of_hashes)
 
 
 service = SpreadsheetService()

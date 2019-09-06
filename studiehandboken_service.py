@@ -19,7 +19,7 @@ def website_parser(website_code, lang=default_lang, output=True):
     response = r.json()
     title = response[0]["name"][lang]
 
-    print("This is the students handbook of {}".format(title))
+    if output: print("This is the students handbook of {}".format(title))
 
     recursive_print(response[0]["children"], indent=4, lang=lang, p=output)
 
@@ -61,14 +61,13 @@ def get_reservations(course, lang=default_lang):
 
     courses_timetable[course["name"][lang]] = res
 
-
 def get_thisweek_sunday(plus_weeks=1):
     today = datetime.datetime.now()
     weekday = datetime.datetime.weekday(today)
     return today.now() + datetime.timedelta(days=((7 * plus_weeks) + 6 - weekday))
 
 
-def main_parser(program="M.Sc.", lang=default_lang):
+def main_parser(program="M.Sc.", lang=default_lang, weeks=0):
     if lang is "English":
         lang = "valueEn"
         lang_code = "en"
@@ -86,16 +85,16 @@ def main_parser(program="M.Sc.", lang=default_lang):
     for k, v in courses.items():
         course_parser(v, lang)
 
-    weeks_from_now = 0
+    weeks_from_now = weeks
     if output: ("Looking for next {} weeks courses.. Hold on!".format(weeks_from_now + 1))
     sunday = get_thisweek_sunday(weeks_from_now)
     text = ""
-    # ocale.setlocale(locale.LC_TIME, 'sv_SE')
+    # locale.setlocale(locale.LC_TIME, 'sv_SE')
 
     for name, timetable in courses_timetable.items():
         if timetable:
             first = True
-            for time in timetable:
+            for time in sorted(timetable, key=lambda item: item["startTime"]):
                 if time["startTime"] < sunday:
                     if output:
                         if first:
@@ -108,13 +107,18 @@ def main_parser(program="M.Sc.", lang=default_lang):
                     else:
                         if first:
                             text = text + name + "\n"
+                            first = False
                         # chatbot
-                        text = text + " "*15 + time["startTime"].strftime("%A %d.%m") + " " + time["startTime"].strftime(
+                        text = text + " " * 15 + time["startTime"].strftime("%A %d.%m") + " " + time[
+                            "startTime"].strftime(
                             "%H:%M") + "-" + time["endTime"].strftime("%H:%M") + "\n"
                         # break
-    return text
+    if len(text) > 0:
+        return text
+    else:
+        return
 
 
 if __name__ == "__main__":
-    text = main_parser("M.Sc.", default_lang)
+    text = main_parser("M.Sc.", default_lang, weeks=1)
     print(text)

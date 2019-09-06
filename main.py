@@ -12,19 +12,21 @@ import client_secrets_telegram
 API_TOKEN = client_secrets_telegram.BOT_TOKEN
 URL = "https://api.telegram.org/bot{}/".format(API_TOKEN)
 
-
 # setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 service = spreadsheet_service.SpreadsheetService()
 
-
 PROGRAM, LANGUAGE, TIMETABLE, SAVEDATA = range(4)
+MORE, WEEKS, ADDITION = range(3)
 
 
 def remove_keyboard(update, context):
     reply_markup = ReplyKeyboardRemove()
     update.message.editMessageText(chat_id=update.message.chat_id, reply_markup=reply_markup)
+
+
+# -------------------- Conversaton part -------------------------
 
 
 def start(update, context):
@@ -56,8 +58,8 @@ def language(update, context):
     user = update.message.from_user
     logger.info("User %s did specify %s as his language.", user.first_name, update.message.text)
     reply_keyboard = [['Yes', 'No']]
-    update.message.reply_text('Thank you, setting {} as your language. \n'
-                              'Can I save your data for later use?'.format(update.message.text),
+    update.message.reply_text('Thank you, setting {} as your default language. \n'
+                              'Can I save your data for later use? you can /skip this.'.format(update.message.text),
                               reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
 
     return SAVEDATA
@@ -76,15 +78,27 @@ def skip_language(update, context):
 
 def save_data(update, context):
     user = update.message.from_user
-    logger.info("User %s did not specify a language.", user.first_name)
-    update.message.reply_text('Thank you, I will save your information for later use.\n '
-                              'Dont worry, it\'s safe with me.')
-    service.insertRow(data=[user.id, context.user_data["programme"], context.user_data["language"]])
-    return TIMETABLE
+    if update.message.text == "Yes":
+        logger.info("Saving user information: %d, %s, %s".format(user.id, context.user_data["programme"],
+                                                                 context.user_data["language"]))
+        update.message.reply_text('Thank you, I will save your information for later use.\n '
+                                  'Dont worry, it\'s safe with me.')
+        service.insertRow(data=[user.id, context.user_data["programme"], context.user_data["language"]])
+        reply_keyboard = [['Yes please', 'No thanks']]
+        update.message.reply_text('Let me show you your schedule',
+                                  reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
+        return TIMETABLE
+    else:
+        skip_save(update, context)
 
 
 def skip_save(update, context):
     update.message.reply_text('Ok, I understand you.', reply_markup=ReplyKeyboardRemove())
+    reply_keyboard = [['Yes please', 'No thanks']]
+    update.message.reply_text('Do you want me to look for your schedule?',
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+
     return TIMETABLE
 
 
@@ -97,9 +111,59 @@ def timetable(update, context):
                               'Let me entertain you with a joke as you wait...\n\n'
                               '{}'.format(get_joke()), reply_markup=ReplyKeyboardRemove())
 
-    table = main_parser(program=context.user_data["programme"], lang=context.user_data["language"])
-    print(table)
-    update.message.reply_text(table, reply_markup=ReplyKeyboardRemove())
+    table = main_parser(program=context.user_data["programme"], lang=context.user_data["language"], weeks=0)
+    if table:
+        print(table)
+        update.message.reply_text(table, reply_markup=ReplyKeyboardRemove())
+
+    else:
+        update.message.reply_text('Nothing scheduled for you, have a nice week!')
+
+    update.message.reply_text('You can always request /more')
+    return ConversationHandler.END
+
+
+def more_timetable(update, context):
+    print(update.message.text)
+    if not context.user_data:
+        reply_keyboard = [["Bachelor's", "Masters"]]
+        update.message.reply_text('I have not saved any information about what you study, '
+                                  'what degree are you looking for?',
+                                  reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        return ADDITION
+    else:
+        update.message.reply_text('How many weeks ahead are you looking?', reply_keyboard=ReplyKeyboardRemove())
+
+    return WEEKS
+
+
+def add_information(update, context):
+    if update.message.text == "Bachelor's":
+        context.user_data["programme"] = "B.Sc."
+    elif update.message.text == "Masters":
+        context.user_data["programme"] = "M.Sc."
+
+    return more_timetable(update, context)
+
+
+def show_weeks(update, context):
+    logger.info('User %s is looking for %s weeks', update.message.from_user.first_name, update.message.text)
+    weeks = int(update.message.text)
+
+    update.message.reply_text("looking for the next " + str(weeks) + " weeks schedule")
+
+    if "language" in context.user_data:
+        table = main_parser(program=context.user_data["programme"], lang=context.user_data["language"], weeks=weeks)
+    elif "programme" in context.user_data:
+        table = main_parser(program=context.user_data["programme"], lang="Swedish", weeks=weeks)
+    else:
+        table = main_parser(program="M.Sc.", lang="Swedish", weeks=weeks)
+
+    if table:
+        update.message.reply_text(table)
+    else:
+        update.message.reply_text('Sorry didn\'t find anything..')
+
     return ConversationHandler.END
 
 
@@ -110,6 +174,9 @@ def cancel(update, context):
                               reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
+
+
+# ------------------------ Conversation ends ------------------------------------
 
 
 def error(update, context):
@@ -124,7 +191,12 @@ def get_msc(update, context):
                               'Here\'s a joke for now.\n'
                               '{}'.format(get_joke()))
     table = main_parser(program="M.Sc.", lang='Swedish')
-    update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
+    context.user_data["programme"] = "M.Sc."
+    if table:
+        update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
+    else:
+        update.message.reply_text('I didn\'t find anything scheduled for you, you can always request /more',
+                                  reply_markup=ReplyKeyboardRemove())
 
 
 def get_bsc(update, context):
@@ -134,7 +206,11 @@ def get_bsc(update, context):
                               'Here\'s a joke for now.\n'
                               '{}'.format(get_joke()))
     table = main_parser(program="B.Sc.", lang='Swedish')
-    update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
+    context.user_data["programme"] = "B.Sc."
+    if table:
+        update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
+    else:
+        update.message.reply_text('Looks like nothing scheduled for this week, you can always request /more')
 
 
 def tell_joke(update, context):
@@ -154,7 +230,9 @@ def get_help(update, context):
                               'Stay tuned, for the time these are the commands I understand.\n'
                               '/start\n/Magister\n/Kandi\n/Joke\n/Help\n\n'
                               'Stay tuned for reminders and other cool stuff.'
-                              '/Developer')
+                              '/Developer\n'
+                              'If something is wrong, give my creator a heads up!'
+                              '\n @Faagerholm')
 
 
 def get_dev(update, context):
@@ -164,8 +242,6 @@ def get_dev(update, context):
 
 def main():
     updater = Updater(token=API_TOKEN, use_context=True)
-    # Stopping any old updater
-    updater.stop()
     dispatcher = updater.dispatcher
 
     # Add conversation handler with the states PROGRAM and LANGUAGE
@@ -178,7 +254,7 @@ def main():
             LANGUAGE: [MessageHandler(Filters.regex('^(Swedish|English|Finnish)$'), language),
                        CommandHandler('skip', skip_language)],
 
-            TIMETABLE: [MessageHandler(None, timetable)],
+            TIMETABLE: [MessageHandler(Filters.regex('^(Yes please|No thanks)$'), timetable)],
 
             SAVEDATA: [MessageHandler(Filters.regex('^(Yes|No)$'), save_data),
                        CommandHandler('skip', skip_save)]
@@ -187,7 +263,20 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel)]
     )
 
+    more_conv = ConversationHandler(
+        entry_points=[CommandHandler('more', more_timetable)],
+
+        states={
+            WEEKS: [MessageHandler(None, show_weeks)],
+
+            ADDITION: [MessageHandler(Filters.regex('^(Bachelor\'s|Masters)$'), add_information)]
+
+        },
+        fallbacks=[CommandHandler('cancle', cancel)]
+    )
+
     dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(more_conv)
     dispatcher.add_handler(CommandHandler('Magister', get_msc))
     dispatcher.add_handler(CommandHandler('Kandi', get_bsc))
     dispatcher.add_handler(CommandHandler('Joke', tell_joke))
