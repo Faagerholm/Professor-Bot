@@ -1,8 +1,8 @@
-from telegram import ReplyKeyboardRemove
+from telegram import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from Conversations.general import get_joke
 import logging
 
-from studiehandboken_service import main_parser
+from studiehandboken_service import main_parser, alt_parser
 
 # setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -55,3 +55,22 @@ def get_bsc(update, context):
         update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
     else:
         update.message.reply_text('Looks like nothing scheduled for this week, you can always request /more')
+
+
+def next_week(update, context):
+    keyboard = [[InlineKeyboardButton("Datateknik, magister", callback_data='4349')],
+                [InlineKeyboardButton("Datateknik, kandidat", callback_data='5071')],
+                [InlineKeyboardButton("Kemi- och precessteknik, kandidat", callback_data='4337')],
+                [InlineKeyboardButton("Kemi- och precessteknik, magister", callback_data='6132')],
+                [InlineKeyboardButton("Kemi- och precessteknik, energiteknik", callback_data='6020')]]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text("Vilket program söker du efter?", reply_markup=reply_markup)
+
+
+def callback(update, context):
+    query = update.callback_query
+    query.edit_message_text("Söker efter dina kurser...")
+    table = alt_parser(query.data)
+    query.edit_message_text(text="Dina kurser för nästa vecka: \n\n{}".format(table))

@@ -26,23 +26,18 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
-def button(update, context):
-    query = update.callback_query
-
-    query.edit_message_text(text="Selected option: {}".format(query.data))
-
-
 def main():
     updater = Updater(token=API_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(start_conv())
-    dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(more_conv())
     dispatcher.add_handler(CommandHandler('Magister', commands.get_msc))
     dispatcher.add_handler(CommandHandler('Kandi', commands.get_bsc))
     dispatcher.add_handler(CommandHandler('Joke', commands.tell_joke))
     dispatcher.add_handler(CommandHandler('Help', commands.get_help))
     dispatcher.add_handler(CommandHandler('Developer', commands.get_dev))
+    dispatcher.add_handler(CommandHandler('next_week', commands.next_week))
+    dispatcher.add_handler(CallbackQueryHandler(commands.callback))
 
     # log all errors
     dispatcher.add_error_handler(error)
