@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 def get_help(update, context):
     update.message.reply_text('I\'m the professor Bot , soon I\'ll know alot about your school. '
                               'Stay tuned, for the time these are the commands I understand.\n'
-                              '/start\n/Magister\n/Kandi\n/Joke\n/Help\n\n'
+                              '/Start\n/Magister\n/Kandi\n/Joke\n/Help\n\n'
                               'Stay tuned for reminders and other cool stuff.'
-                              '/Developer\n'
+                              ' /Developer\n'
                               'If something is wrong, give my creator a heads up!'
                               '\n @Faagerholm')
 

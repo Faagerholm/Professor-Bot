@@ -18,7 +18,6 @@ degreeInMemory = "None"
 def website_parser(website_code, lang=default_lang, output=True):
     # TODO: make test for websited code
     # Clear old table
-    global degreeInMemory
     if degreeInMemory == website_code:
         return
     degInMemory = website_code
@@ -70,6 +69,7 @@ def get_reservations(course, lang=default_lang):
             res.append({"startTime": start, "endTime": end})
 
     courses_timetable[course["name"][lang]] = res
+
 
 def get_thisweek_sunday(plus_weeks=1):
     today = datetime.datetime.now()

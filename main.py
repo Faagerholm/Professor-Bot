@@ -1,11 +1,11 @@
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 import logging
 
 # Not so be shared with git
 import client_secrets_telegram
 
-from Conversations.start import ConversationStart
-from Conversations.more import ConversationMore
+from Conversations.start import get_handler as start_conv
+from Conversations.more import get_handler as more_conv
 import commands
 
 
@@ -26,11 +26,18 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
+def button(update, context):
+    query = update.callback_query
+
+    query.edit_message_text(text="Selected option: {}".format(query.data))
+
+
 def main():
     updater = Updater(token=API_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(ConversationStart())
-    dispatcher.add_handler(ConversationMore())
+    dispatcher.add_handler(start_conv())
+    dispatcher.add_handler(CallbackQueryHandler(button))
+    dispatcher.add_handler(more_conv())
     dispatcher.add_handler(CommandHandler('Magister', commands.get_msc))
     dispatcher.add_handler(CommandHandler('Kandi', commands.get_bsc))
     dispatcher.add_handler(CommandHandler('Joke', commands.tell_joke))

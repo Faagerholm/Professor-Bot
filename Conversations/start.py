@@ -1,5 +1,5 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, ConversationHandler
-from telegram import InlineQueryResultArticle, InputTextMessageContent, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import InlineQueryResultArticle, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 import logging
 
 from studiehandboken_service import main_parser
@@ -14,11 +14,9 @@ PROGRAM, LANGUAGE, TIMETABLE, SAVEDATA = range(4)
 service = spreadsheet_service.SpreadsheetService()
 
 
-class ConversationStart:
-
-    def __init__(self):
+def get_handler():
         # Add conversation handler with the states PROGRAM and LANGUAGE
-        self.conv_handler = ConversationHandler(
+        conv_handler = ConversationHandler(
             entry_points=[CommandHandler('start', start)],
 
             states={
@@ -35,6 +33,7 @@ class ConversationStart:
 
             fallbacks=[CommandHandler('cancel', cancel)]
         )
+        return conv_handler
 
 
 # /start

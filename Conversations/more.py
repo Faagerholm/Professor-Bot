@@ -12,24 +12,23 @@ logger = logging.getLogger(__name__)
 MORE, WEEKS, ADDITION = range(3)
 
 
-class ConversationMore:
+def get_handler():
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('more', more_timetable)],
 
-    def __init__(self):
-        more_conv = ConversationHandler(
-            entry_points=[CommandHandler('more', more_timetable)],
+        states={
+            WEEKS: [MessageHandler(None, show_weeks)],
 
-            states={
-                WEEKS: [MessageHandler(None, show_weeks)],
+            ADDITION: [MessageHandler(Filters.regex('^(Bachelor\'s|Masters)$'), add_information)]
 
-                ADDITION: [MessageHandler(Filters.regex('^(Bachelor\'s|Masters)$'), add_information)]
-
-            },
-            fallbacks=[CommandHandler('cancel', cancel)]
-        )
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+    return conv_handler
 
 
 def more_timetable(update, context):
-    print(update.message.text)
+    logger.info("user %s looking for more.", update.message.from_user.first_name)
     if not context.user_data:
         reply_keyboard = [["Bachelor's", "Masters"]]
         update.message.reply_text('I have not saved any information about what you study, '
