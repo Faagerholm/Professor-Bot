@@ -62,7 +62,8 @@ def next_week(update, context):
                 [InlineKeyboardButton("Datateknik, kandidat", callback_data='5071')],
                 [InlineKeyboardButton("Kemi- och precessteknik, kandidat", callback_data='4337')],
                 [InlineKeyboardButton("Kemi- och precessteknik, magister", callback_data='6132')],
-                [InlineKeyboardButton("Kemi- och precessteknik, energiteknik", callback_data='6020')]]
+                [InlineKeyboardButton("Kemi- och precessteknik, energiteknik", callback_data='6020')],
+                [InlineKeyboardButton("Utbildningslinjen för kultur, historia och filosofi, KH2018", callback_data='7226')]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
