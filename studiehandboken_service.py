@@ -2,6 +2,8 @@ import requests
 import datetime
 import pprint
 import locale
+import time
+
 
 baseUrl = "http://stserv.abo.fi/api/accomplishment-plan/"
 courseUrl = "http://stserv.abo.fi/api/realizations/course/"
@@ -61,8 +63,9 @@ def get_reservations(course, lang=default_lang):
     for index, reservation in enumerate(course["reservations"]):
         startStamp = reservation["startTime"] / 1000
         endStamp = reservation["endTime"] / 1000
-        start = datetime.datetime.fromtimestamp(startStamp)
-        end = datetime.datetime.fromtimestamp(endStamp)
+        # Note daylight (+1 hour)
+        start = datetime.datetime.fromtimestamp(startStamp) + datetime.timedelta(hours=time.daylight)
+        end = datetime.datetime.fromtimestamp(endStamp) + datetime.timedelta(hours=time.daylight)
         # print(course["name"][language], start, "-", end)
 
         # Filter out old reservations
