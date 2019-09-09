@@ -36,7 +36,7 @@ def main():
     dispatcher.add_handler(CommandHandler('Joke', commands.tell_joke))
     dispatcher.add_handler(CommandHandler('Help', commands.get_help))
     dispatcher.add_handler(CommandHandler('Developer', commands.get_dev))
-    dispatcher.add_handler(CommandHandler('next_week', commands.next_week))
+    dispatcher.add_handler(CommandHandler('Scheme', commands.next_week))
     dispatcher.add_handler(CallbackQueryHandler(commands.callback))
 
     # log all errors

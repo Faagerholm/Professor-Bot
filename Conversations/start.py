@@ -15,6 +15,7 @@ service = spreadsheet_service.SpreadsheetService()
 
 
 def get_handler():
+
         # Add conversation handler with the states PROGRAM and LANGUAGE
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('start', start)],
@@ -47,7 +48,7 @@ def start(update, context):
     #    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     #
 
-    update.message.reply_text('I\'m not fully implemented yet, stay tuned. meanwhile, check out /help')
+    update.message.reply_text('I\'m not fully implemented yet, stay tuned. meanwhile, check out /help or /scheme')
     return ConversationHandler.END
 
 

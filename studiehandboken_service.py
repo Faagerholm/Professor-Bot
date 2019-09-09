@@ -72,10 +72,13 @@ def get_reservations(course, lang=default_lang):
     courses_timetable[course["name"][lang]] = res
 
 
-def get_thisweek_sunday(plus_weeks=1):
+def get_thisweek_sunday(plus_weeks=0):
     today = datetime.datetime.now()
     weekday = datetime.datetime.weekday(today)
-    return today.now() + datetime.timedelta(days=((7 * plus_weeks) + 6 - weekday))
+    if weekday <= 4:
+        return today.now() + datetime.timedelta(days=((7 * plus_weeks) + 6 - weekday))
+    else:
+        return today.now() + datetime.timedelta(days=(7 + 6 - weekday))
 
 
 def main_parser(program="M.Sc.", lang=default_lang, weeks=0):
@@ -131,7 +134,7 @@ def main_parser(program="M.Sc.", lang=default_lang, weeks=0):
         return
 
 
-def alt_parser(program_code, lang=default_lang, weeks=1):
+def alt_parser(program_code, lang=default_lang, weeks=0):
     output = False
 
     website_parser(str(program_code), lang, output=output)
