@@ -21,7 +21,7 @@ def get_help(update, context):
 
 def get_dev(update, context):
     update.message.reply_text('You will find the project at\n'
-                              'https://github.com/Faagerholm/Professo-Bot.git')
+                              'https://github.com/Faagerholm/Professor-Bot.git')
 
 
 def tell_joke(update, context):
