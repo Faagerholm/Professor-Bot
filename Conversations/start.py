@@ -48,7 +48,7 @@ def start(update, context):
     #    reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
     #
 
-    update.message.reply_text('I\'m not fully implemented yet, stay tuned. meanwhile, check out /help or /scheme')
+    update.message.reply_text('I\'m not fully implemented yet, stay tuned. Meanwhile, check out /help or /scheme')
     return ConversationHandler.END
 
 
