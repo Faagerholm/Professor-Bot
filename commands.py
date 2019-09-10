@@ -46,6 +46,7 @@ def next_week(update, context):
 
 def callback(update, context):
     query = update.callback_query
+    logger.info("User {} looking for {}.".format(update.effective_user.username, query.data))
     query.edit_message_text("Söker efter dina kurser...")
     table = alt_parser(query.data)
     query.edit_message_text(text="Dina kurser för nästa vecka: \n\n{}".format(table))
