@@ -1,8 +1,12 @@
-from telegram import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, \
+    ParseMode, InputTextMessageContent, InlineQueryResultArticle
+
+from telegram.utils.helpers import escape_markdown
 from Conversations.general import get_joke
+from uuid import uuid4
 import logging
 
-from studiehandboken_service import main_parser, alt_parser
+from studiehandboken_service import alt_parser, course_search, get_course
 
 # setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -28,35 +32,6 @@ def tell_joke(update, context):
     update.message.reply_text(get_joke(), reply_markup=ReplyKeyboardRemove())
 
 
-def get_msc(update, context):
-    user = update.message.from_user
-    logger.info("User %s looking for his masters courses.", user.first_name)
-    update.message.reply_text('Looking for this weeks masters schedule.. \n\n'
-                              'Here\'s a joke for now.\n'
-                              '{}'.format(get_joke()))
-    table = main_parser(program="M.Sc.", lang='Swedish')
-    context.user_data["programme"] = "M.Sc."
-    if table:
-        update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
-    else:
-        update.message.reply_text('I didn\'t find anything scheduled for you, you can always request /more',
-                                  reply_markup=ReplyKeyboardRemove())
-
-
-def get_bsc(update, context):
-    user = update.message.from_user
-    logger.info("User %s looking for his bachelor\'s courses.", user.first_name)
-    update.message.reply_text('Looking for this weeks bachelor\'s schedule.. \n\n'
-                              'Here\'s a joke for now.\n'
-                              '{}'.format(get_joke()))
-    table = main_parser(program="B.Sc.", lang='Swedish')
-    context.user_data["programme"] = "B.Sc."
-    if table:
-        update.message.reply_text('This weeks schedule, \n{}'.format(table), reply_markup=ReplyKeyboardRemove())
-    else:
-        update.message.reply_text('Looks like nothing scheduled for this week, you can always request /more')
-
-
 def next_week(update, context):
     keyboard = [[InlineKeyboardButton("Datateknik, magister", callback_data='4349')],
                 [InlineKeyboardButton("Datateknik, kandidat", callback_data='5071')],
@@ -75,3 +50,17 @@ def callback(update, context):
     query.edit_message_text("Söker efter dina kurser...")
     table = alt_parser(query.data)
     query.edit_message_text(text="Dina kurser för nästa vecka: \n\n{}".format(table))
+
+
+def search(update, context):
+    query = update.inline_query.query
+    if len(query) > 3:
+        results = course_search(query)
+        answer = []
+        for res in results:
+            answer.append(InlineQueryResultArticle(
+                id=uuid4(),
+                title=res["name"],
+                input_message_content=InputTextMessageContent(get_course(res["id"]))))
+
+        update.inline_query.answer(answer)

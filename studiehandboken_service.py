@@ -35,6 +35,40 @@ def website_parser(website_code, lang=default_lang, output=True):
     get_courses(response[0]["children"], indent=4, lang=lang, p=output)
 
 
+def course_search(search_string, search_type="COURSE_UNIT"):
+    url = "http://stserv.abo.fi/api/lu/units/{}/{}".format(search_string, search_type)
+    r = requests.get(url=url)
+    response = r.json()
+    result = []
+    for course in response["learningUnits"]:
+        result.append({"id": course["levelId"], "name": course["name"]["valueSv"]})
+    return result
+
+
+def get_course(code):
+    url = "http://stserv.abo.fi/api/realizations/course/{}".format(code)
+    r = requests.get(url=url)
+    response = r.json()
+    result = []
+    text = ""
+    for realisation in response:
+        timetable = get_reservations(realisation)
+        first = True
+        for c_time in sorted(timetable, key=lambda item: item["startTime"]):
+            if first:
+                text = text + realisation["name"]["valueSv"] + "\n"
+                first = False
+            # chatbot
+            text = text + " " * 15 + c_time["startTime"].strftime("%A %d.%m") + " " + c_time[
+                "startTime"].strftime(
+                "%H:%M") + "-" + c_time["endTime"].strftime("%H:%M") + "\n"
+            # break
+    if len(text) > 0:
+        return text
+    else:
+        return "Hittade inget.."
+
+
 def get_courses(dictionary, indent=4, lang=default_lang, p=True):
 
     for child in dictionary:
@@ -73,6 +107,7 @@ def get_reservations(course, lang=default_lang):
             res.append({"startTime": start, "endTime": end})
 
     courses_timetable[course["name"][lang]] = res
+    return res
 
 
 def get_thisweek_sunday(plus_weeks=0):
@@ -181,5 +216,4 @@ def alt_parser(program_code, lang=default_lang, weeks=0):
 
 
 if __name__ == "__main__":
-    text = main_parser("M.Sc.", default_lang, weeks=1)
-    print(text)
+    print(course_search("programmering"))
