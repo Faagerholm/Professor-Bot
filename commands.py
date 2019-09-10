@@ -1,5 +1,5 @@
 from telegram import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, \
-    ParseMode, InputTextMessageContent, InlineQueryResultArticle
+    InputTextMessageContent, InlineQueryResultArticle
 
 from telegram.utils.helpers import escape_markdown
 from Conversations.general import get_joke
@@ -37,8 +37,7 @@ def next_week(update, context):
                 [InlineKeyboardButton("Datateknik, kandidat", callback_data='5071')],
                 [InlineKeyboardButton("Kemi- och precessteknik, kandidat", callback_data='4337')],
                 [InlineKeyboardButton("Kemi- och precessteknik, magister", callback_data='6132')],
-                [InlineKeyboardButton("Kemi- och precessteknik, energiteknik", callback_data='6020')],
-                [InlineKeyboardButton("Utbildningslinjen för kultur, historia och filosofi, KH2018", callback_data='7226')]]
+                [InlineKeyboardButton("Kemi- och precessteknik, energiteknik", callback_data='6020')]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -57,7 +56,7 @@ def search(update, context):
     if len(query) > 3:
         results = course_search(query)
         answer = []
-        for res in results:
+        for res in sorted(results, key=lambda item: item["name"]):
             answer.append(InlineQueryResultArticle(
                 id=uuid4(),
                 title=res["name"],

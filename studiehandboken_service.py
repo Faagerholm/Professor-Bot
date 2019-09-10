@@ -35,12 +35,12 @@ def website_parser(website_code, lang=default_lang, output=True):
     get_courses(response[0]["children"], indent=4, lang=lang, p=output)
 
 
-def course_search(search_string, search_type="COURSE_UNIT"):
+def course_search(search_string, search_type="COURSE_UNIT", limit=20):
     url = "http://stserv.abo.fi/api/lu/units/{}/{}".format(search_string, search_type)
     r = requests.get(url=url)
     response = r.json()
     result = []
-    for course in response["learningUnits"]:
+    for course in response["learningUnits"][:limit]:
         result.append({"id": course["levelId"], "name": course["name"]["valueSv"]})
     return result
 
@@ -49,7 +49,6 @@ def get_course(code):
     url = "http://stserv.abo.fi/api/realizations/course/{}".format(code)
     r = requests.get(url=url)
     response = r.json()
-    result = []
     text = ""
     for realisation in response:
         timetable = get_reservations(realisation)
@@ -66,7 +65,7 @@ def get_course(code):
     if len(text) > 0:
         return text
     else:
-        return "Hittade inget.."
+        return "Hittade ingen tidtabell för kursen du söker"
 
 
 def get_courses(dictionary, indent=4, lang=default_lang, p=True):
